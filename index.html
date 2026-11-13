@@ -399,7 +399,7 @@ function thumbHTML(item,portrait,gx,gy,live){
   const word=esc((item.title||'').split(' ').slice(0,portrait?1:2).join(' '));
   const img=list.length?`<img alt="" loading="lazy" decoding="async" src="${esc(list[0])}" data-alt="${esc(list.slice(1).join('|'))}" onload="thumbOk(this)" onerror="thumbNext(this)">`:'';
   const src=live&&m&&(portrait?m.previewPortrait:m.preview);
-  const vid=src&&!reduce?`<video class="pv" muted loop playsinline webkit-playsinline preload="none" disablepictureinpicture data-src="${esc(src)}" aria-hidden="true"></video>`:'';
+  const vid=src?`<video class="pv" muted loop playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback data-src="${esc(src)}" data-full="${esc(m.embed)}" aria-hidden="true" tabindex="-1"></video>`:'';
   return `<div class="thumb" style="--gx:${gx}%;--gy:${gy}%">${img?'':`<div class="word">${word}</div>`}${img}${vid}</div>`;
 }
 function thumbNext(img){const a=(img.dataset.alt||'').split('|').filter(Boolean);if(a.length){img.dataset.alt=a.slice(1).join('|');img.src=a[0]}else img.remove()}
@@ -534,7 +534,7 @@ function open(item,ratio,meta,src){
   clearTimeout(loadT);
   if(m)loadT=setTimeout(()=>{
     if(!modal.classList.contains('open'))return;
-    const el=m.type==='file'?Object.assign(document.createElement('video'),{src:m.embed,controls:true,autoplay:true,playsInline:true,disablePictureInPicture:true,poster:(ratio==='9:16'?m.thumbsPortrait:m.thumbs)[0]||''}):Object.assign(document.createElement('iframe'),{src:m.embed,allow:'autoplay; encrypted-media; picture-in-picture; fullscreen',allowFullscreen:true,title:item.title||'Video'});
+    const el=m.type==='file'?(()=>{const v=Object.assign(document.createElement('video'),{src:m.embed,controls:true,autoplay:true,playsInline:true,disablePictureInPicture:true,disableRemotePlayback:true,poster:(ratio==='9:16'?m.thumbsPortrait:m.thumbs)[0]||''});v.setAttribute('controlslist','nodownload noremoteplayback');v.addEventListener('contextmenu',e=>e.preventDefault());return v})():Object.assign(document.createElement('iframe'),{src:m.embed,allow:'autoplay; encrypted-media; picture-in-picture; fullscreen',allowFullscreen:true,title:item.title||'Video'});
     el.className='player';mm.appendChild(el);
     el.addEventListener('load',()=>el.classList.add('ready'));if(m.type==='file')el.addEventListener('loadeddata',()=>el.classList.add('ready'));
   },delay);
@@ -609,13 +609,20 @@ function setupPreviews(){
   pio=pio||new IntersectionObserver(es=>es.forEach(en=>{
     const v=en.target;
     if(en.isIntersecting&&!modal.classList.contains('open')){
-      if(!v.src){v.src=v.dataset.src;v.addEventListener('playing',()=>v.classList.add('playing'),{once:true})}
-      v.play().catch(()=>{});
+      if(!v.src){
+        v.muted=true;v.defaultMuted=true;v.playsInline=true;
+        v.addEventListener('playing',()=>v.classList.add('playing'),{once:true});
+        // kalau versi ringan belum siap di Cloudinary, pakai video aslinya
+        v.addEventListener('error',()=>{if(v.dataset.full&&v.src!==v.dataset.full){v.src=v.dataset.full;v.play().catch(()=>{})}});
+        v.src=v.dataset.src;
+      }
+      v.muted=true;v.play().catch(()=>{});
     }else v.pause();
   }),{threshold:.15});
   document.querySelectorAll('video.pv').forEach(v=>pio.observe(v));
 }
-function pausePreviews(on){document.querySelectorAll('video.pv').forEach(v=>{if(on)v.pause();else if(v.src){const r=v.getBoundingClientRect();if(r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth)v.play().catch(()=>{})}})}
+function pausePreviews(on){document.querySelectorAll('video.pv').forEach(v=>{if(on)v.pause();else if(v.src){v.muted=true;const r=v.getBoundingClientRect();if(r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth)v.play().catch(()=>{})}})}
+document.addEventListener('contextmenu',e=>{if(e.target.closest('video,.thumb'))e.preventDefault()});
 document.addEventListener('visibilitychange',()=>pausePreviews(document.hidden));
 let io=null;
 function setupReveal(){
