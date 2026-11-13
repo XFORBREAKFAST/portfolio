@@ -241,6 +241,24 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;paddin
 body.wait main,body.wait .hero{visibility:hidden}
 body.wait .in,body.wait .ln>span{animation-play-state:paused}
 [hidden]{display:none!important}
+
+/* preview video otomatis */
+.thumb video.pv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .8s var(--ease);pointer-events:none}
+.thumb video.pv.playing{opacity:1}
+.player{object-fit:contain}
+video.player{background:#000}
+/* gradient gelap di bawah thumbnail biar teks kebaca */
+.reel::after,.showreel::after{content:"";position:absolute;left:0;right:0;top:auto;bottom:0;height:60%;opacity:1;border-radius:0;z-index:2;pointer-events:none;
+  background:linear-gradient(to top,rgba(4,5,8,.92) 0%,rgba(4,5,8,.55) 45%,transparent 100%)}
+.reel::before,.showreel::before{content:"";position:absolute;left:0;right:0;top:0;height:28%;z-index:2;pointer-events:none;background:linear-gradient(to bottom,rgba(4,5,8,.55),transparent)}
+.card .frame::before{content:"";position:absolute;left:0;right:0;bottom:0;height:45%;z-index:2;pointer-events:none;background:linear-gradient(to top,rgba(4,5,8,.75),transparent)}
+.reel .meta,.reel .top,.showreel .tl,.showreel .bar,.reel .playbtn,.showreel .playbtn,.card .frame .badge,.card .frame .playbtn{z-index:3}
+.reel .meta strong{text-shadow:0 1px 8px rgba(0,0,0,.6)}
+/* tab filter: 1 baris, bisa digeser di HP */
+.tabs{flex-wrap:nowrap;max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;white-space:nowrap}
+@media (max-width:560px){.head .tabs{width:100%}.tab{padding:8px 13px;font-size:13px}}
 </style>
 </head>
 <body class="wait">
@@ -375,12 +393,14 @@ let C=null;
 let cache=null;try{cache=JSON.parse(localStorage.getItem('dz_content')||'null')}catch(e){}
 
 // thumbnail: gambar dari link video, kalau nggak ada pakai placeholder gradient
-function thumbHTML(item,portrait,gx,gy){
+function thumbHTML(item,portrait,gx,gy,live){
   const m=parseMedia(item.url);
   let list=item.thumb?[item.thumb]:(m?(portrait?m.thumbsPortrait:m.thumbs):[]);
   const word=esc((item.title||'').split(' ').slice(0,portrait?1:2).join(' '));
   const img=list.length?`<img alt="" loading="lazy" decoding="async" src="${esc(list[0])}" data-alt="${esc(list.slice(1).join('|'))}" onload="thumbOk(this)" onerror="thumbNext(this)">`:'';
-  return `<div class="thumb" style="--gx:${gx}%;--gy:${gy}%">${img?'':`<div class="word">${word}</div>`}${img}</div>`;
+  const src=live&&m&&(portrait?m.previewPortrait:m.preview);
+  const vid=src&&!reduce?`<video class="pv" muted loop playsinline webkit-playsinline preload="none" disablepictureinpicture data-src="${esc(src)}" aria-hidden="true"></video>`:'';
+  return `<div class="thumb" style="--gx:${gx}%;--gy:${gy}%">${img?'':`<div class="word">${word}</div>`}${img}${vid}</div>`;
 }
 function thumbNext(img){const a=(img.dataset.alt||'').split('|').filter(Boolean);if(a.length){img.dataset.alt=a.slice(1).join('|');img.src=a[0]}else img.remove()}
 function thumbOk(img){if(img.naturalWidth<=120){thumbNext(img)}else img.classList.add('ok')}
@@ -402,7 +422,7 @@ function render(data){
   C=data;
   document.querySelectorAll('[data-k]').forEach(el=>{el.textContent=get(C,el.dataset.k)||''});
   document.getElementById('facts').innerHTML=(C.facts||[]).map(f=>`<div><strong>${esc(f.title)}</strong><span>${esc(f.sub)}</span></div>`).join('');
-  document.getElementById('srThumb').outerHTML=thumbHTML(C.showreel||{},false,75,25).replace('class="thumb"','class="thumb" id="srThumb"');
+  document.getElementById('srThumb').outerHTML=thumbHTML(C.showreel||{},false,75,25,true).replace('class="thumb"','class="thumb" id="srThumb"');
   document.getElementById('services').innerHTML=(C.services||[]).map(v=>`<div class="svc rv spot"><div class="ratio"><i style="${SHAPES[v.shape]||SHAPES.square}"></i></div><h3>${esc(v.title)}</h3><p>${esc(v.desc)}</p></div>`).join('');
   document.getElementById('quote').innerHTML=esc(C.about?.quote).replace(/\*(.+?)\*/g,'<em>$1</em>');
   document.getElementById('tools').innerHTML=(C.tools||[]).map(t=>`<span>${esc(t)}</span>`).join('');
@@ -424,10 +444,10 @@ function render(data){
   let R=(C.reels||[]).map((r,i)=>({...r,_i:i}));
   document.getElementById('reels').hidden=!R.length;
   if(R.length){while(R.length<8)R=R.concat(R.map(r=>({...r})));}
-  stage.innerHTML=R.map((r,j)=>`<div class="reel" data-r="${r._i}" data-j="${j}">${thumbHTML(r,true,30+(j*29)%50,20+(j*17)%50)}<span class="top badge">9:16</span>${PLAY}<div class="meta"><strong>${esc(r.title)}</strong>${r.duration?`<span>${esc(r.duration)}</span>`:''}</div></div>`).join('');
+  stage.innerHTML=R.map((r,j)=>`<div class="reel" data-r="${r._i}" data-j="${j}">${thumbHTML(r,true,30+(j*29)%50,20+(j*17)%50,true)}<span class="top badge">9:16</span>${PLAY}<div class="meta"><strong>${esc(r.title)}</strong>${r.duration?`<span>${esc(r.duration)}</span>`:''}</div></div>`).join('');
   rEls=[...stage.children];hv=rEls.map(()=>0);
 
-  setupReveal();
+  setupReveal();setupPreviews();
 }
 
 // ================= FILTER =================
@@ -502,7 +522,7 @@ function open(item,ratio,meta,src){
   mm.innerHTML=thumbHTML(item,ratio==='9:16',60,30)+(m?'':PLAY+'<div class="note">Video belum dipasang.</div>');
   if(flipAnim){flipAnim.cancel();flipAnim=null}
   srcEl=src||null;
-  modal.classList.add('open','flip');
+  modal.classList.add('open','flip');pausePreviews(true);
   let delay=0;
   if(srcEl&&!reduce){
     mm.style.transformOrigin='0 0';
@@ -514,7 +534,7 @@ function open(item,ratio,meta,src){
   clearTimeout(loadT);
   if(m)loadT=setTimeout(()=>{
     if(!modal.classList.contains('open'))return;
-    const el=m.type==='file'?Object.assign(document.createElement('video'),{src:m.embed,controls:true,autoplay:true,playsInline:true}):Object.assign(document.createElement('iframe'),{src:m.embed,allow:'autoplay; encrypted-media; picture-in-picture; fullscreen',allowFullscreen:true,title:item.title||'Video'});
+    const el=m.type==='file'?Object.assign(document.createElement('video'),{src:m.embed,controls:true,autoplay:true,playsInline:true,disablePictureInPicture:true,poster:(ratio==='9:16'?m.thumbsPortrait:m.thumbs)[0]||''}):Object.assign(document.createElement('iframe'),{src:m.embed,allow:'autoplay; encrypted-media; picture-in-picture; fullscreen',allowFullscreen:true,title:item.title||'Video'});
     el.className='player';mm.appendChild(el);
     el.addEventListener('load',()=>el.classList.add('ready'));if(m.type==='file')el.addEventListener('loadeddata',()=>el.classList.add('ready'));
   },delay);
@@ -528,7 +548,7 @@ function close(){
   const finish=()=>{
     if(s)s.style.visibility='';openIdx=-1;
     modal.style.transition='none';
-    modal.classList.remove('open','flip','closing');
+    modal.classList.remove('open','flip','closing');pausePreviews(false);
     void modal.offsetWidth;
     if(flipAnim){flipAnim.cancel();flipAnim=null}
     modal.style.transition='';
@@ -582,6 +602,21 @@ if(!reduce){
     })();
   },{once:true});
 }
+// preview video jalan sendiri (showreel + reels), cuma yang kelihatan di layar
+let pio=null;
+function setupPreviews(){
+  if(!('IntersectionObserver' in window))return;
+  pio=pio||new IntersectionObserver(es=>es.forEach(en=>{
+    const v=en.target;
+    if(en.isIntersecting&&!modal.classList.contains('open')){
+      if(!v.src){v.src=v.dataset.src;v.addEventListener('playing',()=>v.classList.add('playing'),{once:true})}
+      v.play().catch(()=>{});
+    }else v.pause();
+  }),{threshold:.15});
+  document.querySelectorAll('video.pv').forEach(v=>pio.observe(v));
+}
+function pausePreviews(on){document.querySelectorAll('video.pv').forEach(v=>{if(on)v.pause();else if(v.src){const r=v.getBoundingClientRect();if(r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth)v.play().catch(()=>{})}})}
+document.addEventListener('visibilitychange',()=>pausePreviews(document.hidden));
 let io=null;
 function setupReveal(){
   if(!('IntersectionObserver' in window)||reduce)return;
@@ -604,7 +639,7 @@ function start(data){
   if(started){render(data);return}
   started=true;render(data);document.body.classList.remove('wait');
 }
-if(cache)start(cache);
+if(cache)start({...DEFAULT_CONTENT,...cache});
 window.__setContent=(data)=>{
   if(!data){if(!started)start(DEFAULT_CONTENT);return}
   const merged={...DEFAULT_CONTENT,...data};

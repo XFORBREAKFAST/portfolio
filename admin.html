@@ -77,7 +77,7 @@ a{color:inherit}
 .box h3{font-size:15px;font-weight:600}
 .f{display:grid;gap:6px}
 .f label{font-size:13px;color:var(--muted)}
-.f .hint{font-size:12px;color:#6b7180}
+.hint{font-size:12px;color:#6b7180}
 .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
 input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit;font-size:14px;transition:border-color .2s,box-shadow .2s}
 textarea{resize:vertical;min-height:84px;line-height:1.5}
@@ -106,6 +106,12 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .add:hover{color:var(--text);border-color:var(--blue);background:rgba(29,68,255,.06)}
 @media (max-width:560px){.item{grid-template-columns:1fr}.pv.land{width:100%}}
 .linkok{font-size:12px}
+.urlrow{display:flex;gap:8px}
+.urlrow input{flex:1;min-width:0}
+.prog{position:relative;height:28px;border-radius:8px;background:var(--bg);border:1px solid var(--line);overflow:hidden;display:flex;align-items:center;padding:0 10px;font-size:12px;font-family:var(--mono)}
+.prog i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(29,68,255,.35);transition:width .2s}
+.prog span{position:relative}
+@media (max-width:560px){.urlrow{flex-direction:column}}
 .linkok.good{color:var(--green)}
 .linkok.bad{color:#ffb84d}
 
@@ -186,20 +192,20 @@ function setP(o,p,v){const ks=p.split('.');let a=o;ks.slice(0,-1).forEach((k,i)=
 const CAT_OPTS=Object.entries(CATS);
 const SHAPE_OPTS=[['portrait','Vertikal (9:16)'],['landscape','Landscape (16:9)'],['square','Kotak (1:1)'],['circle','Lingkaran']];
 const SECTIONS=[
-  {id:'works',name:'Karya',desc:'Video landscape dan motion graphic di grid karya. Tempel link YouTube atau Google Drive, thumbnail otomatis muncul.',blocks:[
+  {id:'works',name:'Karya',desc:'Video landscape dan motion graphic di grid karya. Upload video (paling bersih) atau tempel link YouTube/Drive.',blocks:[
     {t:'list',k:'works',label:'karya',preview:'land',item:[
       {k:'title',l:'Judul'},
       [{k:'cat',l:'Kategori',t:'select',opts:CAT_OPTS},{k:'duration',l:'Durasi',ph:'1:30'}],
       {k:'url',l:'Link video',t:'url',ph:'https://youtu.be/...'},
       {k:'thumb',l:'Link gambar thumbnail (opsional)',ph:'Kosongkan biar otomatis dari video'}
     ],blank:{title:'Karya baru',cat:'video',url:'',duration:'',thumb:''}}]},
-  {id:'reels',name:'Reels & TikTok',desc:'Konten vertikal di carousel. Paling bagus pakai link YouTube Shorts.',blocks:[
+  {id:'reels',name:'Reels & TikTok',desc:'Konten vertikal di carousel. Upload video biar preview jalan sendiri dan tanpa logo YouTube.',blocks:[
     {t:'list',k:'reels',label:'reels',preview:'port',item:[
       {k:'title',l:'Judul'},
       {k:'url',l:'Link video',t:'url',ph:'https://youtube.com/shorts/...'},
       [{k:'duration',l:'Durasi',ph:'0:30'},{k:'thumb',l:'Thumbnail (opsional)',ph:'Otomatis'}]
     ],blank:{title:'Reels baru',url:'',duration:'',thumb:''}}]},
-  {id:'showreel',name:'Showreel',desc:'Video besar di bagian paling atas.',blocks:[
+  {id:'showreel',name:'Showreel',desc:'Video besar di bagian paling atas. Upload video biar preview-nya jalan sendiri.',blocks:[
     {t:'box',preview:'showreel',fields:[
       {k:'showreel.title',l:'Judul'},
       {k:'showreel.url',l:'Link video',t:'url',ph:'https://youtu.be/...'},
@@ -231,6 +237,9 @@ const SECTIONS=[
       [{k:'contact.email',l:'Email',ph:'nama@gmail.com'},{k:'contact.whatsapp',l:'Nomor WhatsApp',ph:'0812xxxx'}],
       [{k:'contact.instagram',l:'Instagram',ph:'@username'},{k:'contact.youtube',l:'Link YouTube',ph:'https://youtube.com/@...'}]
     ]}]},
+  {id:'upload',name:'Upload video',desc:'Biar video bisa di-upload langsung (tanpa logo YouTube). Pakai Cloudinary, gratis.',blocks:[
+    {t:'cloudhelp'},
+    {t:'box',fields:[[{k:'settings.cloudName',l:'Cloud name',ph:'contoh: dzakyarif'},{k:'settings.uploadPreset',l:'Upload preset',ph:'contoh: portfolio'}]]}]},
   {id:'security',name:'Keamanan',desc:'Kunci database biar cuma akun kamu yang bisa ngedit.',blocks:[{t:'security'}]}
 ];
 
@@ -245,13 +254,15 @@ function fieldHTML(f,base=''){
   else if(f.t==='select')input=`<select id="${id}" data-p="${p}">${f.opts.map(([a,b])=>`<option value="${a}"${a===v?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
   else if(f.t==='tags')input=`<input id="${id}" data-p="${p}" data-tags="1" value="${esc((v||[]).join(', '))}">`;
   else input=`<input id="${id}" data-p="${p}" ${f.t==='url'?'type="url" inputmode="url"':''} placeholder="${esc(f.ph||'')}" value="${esc(v)}">`;
+  if(f.t==='url')input=`<div class="urlrow">${input}<button type="button" class="btn btn-blue btn-sm" data-up="${p}">⬆ Upload video</button></div><div class="prog" data-prog="${p}" hidden><i></i><span>0%</span></div>`;
   const st=f.t==='url'?`<span class="linkok" data-ok="${p}">${linkState(v)}</span>`:'';
   return `<div class="f"><label for="${id}">${esc(f.l)}</label>${input}${f.hint?`<span class="hint">${esc(f.hint)}</span>`:''}${st}</div>`;
 }
 function linkState(u){
   if(!u)return '';
   const m=parseMedia(u);
-  return m.type==='youtube'?'<span class="good">✓ Link YouTube terbaca</span>':m.type==='drive'?'<span class="good">✓ Link Google Drive terbaca (pastikan aksesnya "Siapa saja yang memiliki link")</span>':m.type==='file'?'<span class="good">✓ File video</span>':'<span class="bad">Link belum dikenali. Pakai link YouTube atau Google Drive.</span>';
+  if(m.cloud)return '<span class="good">✓ Video upload: bersih tanpa logo YouTube, preview bisa jalan sendiri</span>';
+  return m.type==='youtube'?'<span class="bad">Link YouTube terbaca, tapi logo, nama akun & judul YouTube bakal kelihatan. Lebih bagus upload video.</span>':m.type==='drive'?'<span class="good">✓ Link Google Drive terbaca (pastikan aksesnya "Siapa saja yang memiliki link")</span>':m.type==='file'?'<span class="good">✓ File video</span>':'<span class="bad">Link belum dikenali. Pakai link YouTube atau Google Drive.</span>';
 }
 function pvHTML(item,kind){
   const m=parseMedia(item&&item.url);
@@ -283,6 +294,13 @@ function blockHTML(b){
     return `<div class="box">${b.title?`<h3>${esc(b.title)}</h3>`:''}<div class="items">${items}${canAdd?`<button class="add" data-op="add" data-k="${b.k}">+ Tambah ${b.label}</button>`:''}</div></div>`;
   }
   if(b.t==='security')return securityHTML();
+  if(b.t==='cloudhelp')return `<div class="box setup"><h3>Cara setup (sekali aja)</h3><ol>
+    <li>Daftar gratis di <a href="https://cloudinary.com/users/register_free" target="_blank" rel="noopener">cloudinary.com</a> (bisa pakai Google, tanpa kartu kredit).</li>
+    <li>Di halaman <b>Dashboard</b>, salin <b>Cloud name</b> → tempel di bawah.</li>
+    <li>Buka <b>Settings ⚙ → Upload → Upload presets → Add upload preset</b>.</li>
+    <li><b>Signing mode: Unsigned</b>, Folder: <code>portfolio</code> → <b>Save</b>. Salin nama preset-nya → tempel di bawah.</li>
+    <li>Klik <b>Simpan</b>. Sekarang tombol <b>⬆ Upload video</b> di Karya, Reels, dan Showreel bisa dipakai.</li>
+  </ol><span class="hint">Batas gratis: file maks 100 MB per video. Export 1080p H.264 biasanya jauh di bawah itu.</span></div>`;
 }
 function rulesText(uid){return `rules_version = '2';
 service cloud.firestore {
@@ -347,6 +365,35 @@ $('#editor').addEventListener('click',async e=>{
   else{const j=b.dataset.op==='up'?i-1:i+1;[arr[i],arr[j]]=[arr[j],arr[i]];renderEditor()}
   dirty();
 });
+// ===== Upload video ke Cloudinary =====
+$('#editor').addEventListener('click',e=>{
+  const b=e.target.closest('[data-up]');if(!b)return;
+  const cs=D.settings||{};
+  if(!cs.cloudName||!cs.uploadPreset){toast('Setup upload video dulu ya (sekali aja)','bad');cur='upload';renderEditor();return}
+  const p=b.dataset.up,inp=document.createElement('input');inp.type='file';inp.accept='video/*';
+  inp.onchange=()=>{const f=inp.files[0];if(f)upload(f,p,b)};inp.click();
+});
+function upload(file,p,btn){
+  if(file.size>100*1024*1024){toast('File lebih dari 100 MB. Kompres dulu (export 1080p H.264).','bad');return}
+  const cs=D.settings,fd=new FormData();fd.append('file',file);fd.append('upload_preset',cs.uploadPreset);
+  const bar=document.querySelector(`[data-prog="${p}"]`),fill=bar.querySelector('i'),txt=bar.querySelector('span');
+  bar.hidden=false;btn.disabled=true;
+  const x=new XMLHttpRequest();
+  x.open('POST',`https://api.cloudinary.com/v1_1/${encodeURIComponent(cs.cloudName)}/video/upload`);
+  x.upload.onprogress=ev=>{if(ev.lengthComputable){const pc=Math.round(ev.loaded/ev.total*100);fill.style.width=pc+'%';txt.textContent=pc<100?`Upload ${pc}%`:'Memproses video…'}};
+  x.onload=()=>{
+    btn.disabled=false;bar.hidden=true;fill.style.width='0';
+    let r={};try{r=JSON.parse(x.responseText)}catch{}
+    if(x.status>=300||!r.secure_url){toast('Upload gagal: '+(r.error?.message||x.status)+'. Cek Cloud name & preset (harus Unsigned).','bad');return}
+    setP(D,p,r.secure_url);
+    const dp=p.replace(/url$/,'duration');
+    if(r.duration&&!getP(D,dp)){const d=Math.round(r.duration);setP(D,dp,Math.floor(d/60)+':'+String(d%60).padStart(2,'0'))}
+    const keep=scrollY;renderEditor();scrollTo(0,keep);dirty();
+    toast('Video ke-upload ✓ Jangan lupa klik Simpan','ok');
+  };
+  x.onerror=()=>{btn.disabled=false;bar.hidden=true;toast('Upload gagal, cek koneksi internet','bad')};
+  x.send(fd);
+}
 $('#undo').onclick=()=>{D=clone(saved);renderEditor();dirty()};
 $('#save').onclick=save;
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(dirty())save()}});

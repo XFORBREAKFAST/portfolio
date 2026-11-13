@@ -42,13 +42,14 @@ window.DEFAULT_CONTENT = {
     quote: "Buatku, video yang bagus itu yang *enak diikuti*: ritmenya pas, gerakannya punya alasan, dan pesannya nyampe.",
     bio: "Aku Dzaky Arif Muttaqin, video editor dan motion graphic animator. Aku ngerjain konten pendek untuk media sosial sampai animasi untuk presentasi dan company profile."
   },
-  tools: ["After Effects", "Premiere Pro", "Illustrator", "Photoshop"],
+  tools: ["After Effects", "Premiere Pro", "Illustrator", "Photoshop", "CapCut", "Canva"],
   steps: [
     { title: "Brief", desc: "Ngobrolin tujuan, penonton, dan referensi." },
     { title: "Konsep", desc: "Susun alur, naskah, dan contoh gaya visual." },
     { title: "Produksi", desc: "Edit dan animasi, timing diselaraskan dengan musik." },
     { title: "Revisi & kirim", desc: "Dirapikan sesuai masukan, diekspor sesuai platform." }
   ],
+  settings: { cloudName: "", uploadPreset: "" },
   contact: {
     heading: "Punya ide video? Yuk kerjain bareng.",
     text: "Ceritain project kamu lewat salah satu kontak di bawah.",
@@ -69,7 +70,7 @@ window.parseMedia = function (url) {
       type: "youtube", id,
       thumbs: [`https://i.ytimg.com/vi/${id}/maxresdefault.jpg`, `https://i.ytimg.com/vi/${id}/hqdefault.jpg`],
       thumbsPortrait: [`https://i.ytimg.com/vi/${id}/oardefault.jpg`, `https://i.ytimg.com/vi/${id}/hqdefault.jpg`],
-      embed: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&modestbranding=1`
+      embed: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&iv_load_policy=3&color=white`
     };
   }
   m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([\w-]+)/);
@@ -78,6 +79,21 @@ window.parseMedia = function (url) {
     const t = [`https://drive.google.com/thumbnail?id=${id}&sz=w1280`];
     return { type: "drive", id, thumbs: t, thumbsPortrait: t, embed: `https://drive.google.com/file/d/${id}/preview` };
   }
-  if (/\.(mp4|webm|mov)(\?|$)/i.test(url)) return { type: "file", thumbs: [], thumbsPortrait: [], embed: url };
+  // video upload Cloudinary: bisa dipotong & dikompres lewat URL
+  m = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.+)$/);
+  if (m) {
+    const base = m[1], rest = m[2].replace(/^(?:[a-z]{1,3}_[^/]+\/)+/, "");
+    const noExt = rest.replace(/\.[a-z0-9]+$/i, "");
+    const t = (tr, ext) => `${base}${tr}/${ext ? noExt + "." + ext : rest}`;
+    return {
+      type: "file", cloud: true,
+      thumbs: [t("so_1,w_1280,q_auto", "jpg")],
+      thumbsPortrait: [t("so_1,w_720,q_auto", "jpg")],
+      preview: t("w_960,q_auto:eco,du_12,ac_none", "mp4"),
+      previewPortrait: t("w_400,q_auto:eco,du_8,ac_none", "mp4"),
+      embed: t("q_auto", "mp4")
+    };
+  }
+  if (/\.(mp4|webm|mov)(\?|$)/i.test(url)) return { type: "file", thumbs: [], thumbsPortrait: [], preview: url, previewPortrait: url, embed: url };
   return { type: "link", thumbs: [], thumbsPortrait: [], embed: url };
 };
