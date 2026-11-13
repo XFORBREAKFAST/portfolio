@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — Dzaky Arif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Panel admin: gelap sama kayak website, sidebar section + editor + bar simpan */
+  --bg:#06070a;--surface:#0d0f14;--surface-2:#12151c;--line:#1c2029;--line-2:#2a3040;
+  --text:#eceef3;--muted:#868c9a;--blue:#1d44ff;--blue-2:#8ea2ff;--red:#ff5b5b;--green:#3ddc84;
+  --font:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"Geist Mono",ui-monospace,Menlo,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:8px}
+.mono{font-family:var(--mono);font-size:12px}
+.muted{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:999px;font-weight:500;font-size:14px;transition:all .3s var(--ease);white-space:nowrap;text-decoration:none}
+.btn-main{background:var(--text);color:var(--bg)}
+.btn-main:hover{background:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{background:#3358ff}
+.btn-blue:disabled{background:var(--surface-2);color:var(--muted);cursor:default}
+.btn-ghost{border:1px solid var(--line);background:var(--surface)}
+.btn-ghost:hover{border-color:var(--line-2)}
+.btn-sm{padding:7px 12px;font-size:13px}
+
+/* LOGIN */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(600px 400px at 50% 0,rgba(29,68,255,.18),transparent 70%),var(--bg)}
+.login-card{width:min(400px,100%);background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:36px 30px;text-align:center}
+.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(145deg,#2a52ff,#0b1f99);display:grid;place-items:center;font-weight:700;margin:0 auto 20px}
+.login h1{font-size:22px;letter-spacing:-.02em;font-weight:600}
+.login p{color:var(--muted);margin:8px 0 26px;font-size:14px}
+.gbtn{width:100%;background:#fff;color:#1f1f1f;padding:12px 16px;border-radius:12px;font-weight:500;display:flex;gap:10px;align-items:center;justify-content:center}
+.gbtn svg{width:18px;height:18px}
+.err{color:var(--red);font-size:13px;margin-top:14px;text-align:left;background:rgba(255,91,91,.08);border:1px solid rgba(255,91,91,.25);padding:10px 12px;border-radius:10px}
+.err:empty{display:none}
+
+/* APP */
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;background:rgba(6,7,10,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;white-space:nowrap}
+@media (max-width:480px){.brand small{display:none}}
+.brand i{width:28px;height:28px;border-radius:8px;background:linear-gradient(145deg,#2a52ff,#0b1f99);display:grid;place-items:center;font-style:normal;font-size:12px}
+.brand small{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:400;border:1px solid var(--line);padding:2px 8px;border-radius:99px}
+.top-r{display:flex;align-items:center;gap:8px}
+.avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--surface-2)}
+.layout{display:grid;grid-template-columns:230px 1fr;gap:28px;width:min(1180px,100% - 40px);margin:24px auto 120px}
+.side{position:sticky;top:84px;align-self:start;display:flex;flex-direction:column;gap:2px}
+.side button{display:flex;justify-content:space-between;align-items:center;text-align:left;padding:10px 14px;border-radius:10px;color:var(--muted);font-size:14px;transition:all .25s}
+.side button:hover{color:var(--text);background:var(--surface)}
+.side button[aria-current="true"]{color:var(--text);background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.side .count{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.side hr{border:0;border-top:1px solid var(--line);margin:10px 0}
+@media (max-width:820px){
+  .layout{grid-template-columns:1fr;gap:16px;margin-top:12px}
+  .side{position:sticky;top:57px;z-index:15;flex-direction:row;overflow-x:auto;background:var(--bg);padding:8px 0;margin:0 -20px;padding-inline:20px;scrollbar-width:none}
+  .side::-webkit-scrollbar{display:none}
+  .side button{flex:none}
+  .side hr,.side .count{display:none}
+  .top .hide-m{display:none}
+}
+
+.sec-head{margin-bottom:20px}
+.sec-head h2{font-size:24px;font-weight:600;letter-spacing:-.025em}
+.sec-head p{color:var(--muted);margin-top:4px;font-size:14px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:16px}
+.box+.box{margin-top:14px}
+.box h3{font-size:15px;font-weight:600}
+.f{display:grid;gap:6px}
+.f label{font-size:13px;color:var(--muted)}
+.f .hint{font-size:12px;color:#6b7180}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit;font-size:14px;transition:border-color .2s,box-shadow .2s}
+textarea{resize:vertical;min-height:84px;line-height:1.5}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,68,255,.18)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%23868c9a' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* list item */
+.items{display:grid;gap:12px}
+.item{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:auto 1fr;gap:14px;animation:pop .4s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.item.flat{grid-template-columns:1fr}
+.pv{position:relative;width:132px;border-radius:10px;overflow:hidden;background:linear-gradient(150deg,#121622,#07080c);border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);font-size:11px;text-align:center;padding:6px}
+.pv.land{aspect-ratio:16/9}
+.pv.port{width:78px;aspect-ratio:9/16;justify-self:center}
+.pv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pv .tag{position:absolute;left:6px;top:6px;font-family:var(--mono);font-size:10px;background:rgba(0,0,0,.6);padding:1px 6px;border-radius:99px;color:#dfe3ee;z-index:1}
+.item-body{display:grid;gap:10px;min-width:0}
+.item-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item-top .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ops{display:flex;gap:4px}
+.ops button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);font-size:13px}
+.ops button:hover{color:var(--text);border-color:var(--line-2)}
+.ops button.del:hover{color:var(--red);border-color:rgba(255,91,91,.4)}
+.ops button:disabled{opacity:.3;cursor:default}
+.add{border:1px dashed var(--line-2);border-radius:14px;padding:14px;color:var(--muted);font-size:14px;transition:all .25s}
+.add:hover{color:var(--text);border-color:var(--blue);background:rgba(29,68,255,.06)}
+@media (max-width:560px){.item{grid-template-columns:1fr}.pv.land{width:100%}}
+.linkok{font-size:12px}
+.linkok.good{color:var(--green)}
+.linkok.bad{color:#ffb84d}
+
+/* setup keamanan */
+.setup{border-color:rgba(29,68,255,.45);background:linear-gradient(180deg,rgba(29,68,255,.08),transparent),var(--surface)}
+.setup ol{padding-left:20px;display:grid;gap:8px;color:#c9cede;font-size:14px}
+.code{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;font-family:var(--mono);font-size:12px;white-space:pre;overflow-x:auto;color:#c9d2ff}
+.code .btn{position:absolute;right:8px;top:8px}
+.uid{font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--line);padding:8px 12px;border-radius:8px;word-break:break-all}
+
+/* save bar */
+.savebar{position:fixed;left:50%;bottom:20px;transform:translate(-50%,140%);z-index:30;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 18px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-2);box-shadow:0 20px 60px -10px rgba(0,0,0,.7);transition:transform .5s var(--ease);width:max-content;max-width:calc(100% - 24px)}
+.savebar.show{transform:translate(-50%,0)}
+.savebar span{font-size:14px;color:#c9cede}
+.toast{position:fixed;top:16px;left:50%;transform:translate(-50%,-160%);z-index:40;padding:10px 16px;border-radius:12px;font-size:14px;background:var(--surface-2);border:1px solid var(--line-2);transition:transform .5s var(--ease);max-width:calc(100% - 24px)}
+.toast.show{transform:translate(-50%,0)}
+.toast.ok{border-color:rgba(61,220,132,.4)}
+.toast.bad{border-color:rgba(255,91,91,.5)}
+.loading{min-height:60vh;display:grid;place-items:center;color:var(--muted)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="loginView" hidden>
+  <div class="login-card">
+    <div class="logo">D</div>
+    <h1>Admin portofolio</h1>
+    <p>Masuk buat ngubah isi website: karya, video, teks, dan kontak.</p>
+    <button class="gbtn" id="gLogin">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+      Masuk dengan Google
+    </button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appView" hidden>
+  <header class="top">
+    <div class="brand"><i>D</i>Dzaky Arif <small>admin</small></div>
+    <div class="top-r">
+      <a href="/" target="_blank" class="btn btn-ghost btn-sm">Lihat website ↗</a>
+      <img class="avatar hide-m" id="avatar" alt="" referrerpolicy="no-referrer">
+      <button class="btn btn-ghost btn-sm" id="logout">Keluar</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="side" id="side" aria-label="Bagian website"></nav>
+    <main id="editor"><div class="loading">Memuat isi website…</div></main>
+  </div>
+  <div class="savebar" id="savebar">
+    <span id="saveMsg">Ada perubahan yang belum disimpan</span>
+    <button class="btn btn-ghost btn-sm" id="undo">Batal</button>
+    <button class="btn btn-blue" id="save">Simpan</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/content.js"></script>
+<script type="module">
+import {firebaseConfig,SDK} from './js/firebase-config.js';
+const {initializeApp}=await import(SDK+'/firebase-app.js');
+const {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,onAuthStateChanged,signOut}=await import(SDK+'/firebase-auth.js');
+const {getFirestore,doc,getDoc,setDoc}=await import(SDK+'/firebase-firestore.js');
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const REF=doc(db,'site','content');
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const getP=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o);
+function setP(o,p,v){const ks=p.split('.');let a=o;ks.slice(0,-1).forEach((k,i)=>{if(a[k]==null)a[k]=/^\d+$/.test(ks[i+1])?[]:{};a=a[k]});a[ks.at(-1)]=v}
+
+// ===== Skema form =====
+const CAT_OPTS=Object.entries(CATS);
+const SHAPE_OPTS=[['portrait','Vertikal (9:16)'],['landscape','Landscape (16:9)'],['square','Kotak (1:1)'],['circle','Lingkaran']];
+const SECTIONS=[
+  {id:'works',name:'Karya',desc:'Video landscape dan motion graphic di grid karya. Tempel link YouTube atau Google Drive, thumbnail otomatis muncul.',blocks:[
+    {t:'list',k:'works',label:'karya',preview:'land',item:[
+      {k:'title',l:'Judul'},
+      [{k:'cat',l:'Kategori',t:'select',opts:CAT_OPTS},{k:'duration',l:'Durasi',ph:'1:30'}],
+      {k:'url',l:'Link video',t:'url',ph:'https://youtu.be/...'},
+      {k:'thumb',l:'Link gambar thumbnail (opsional)',ph:'Kosongkan biar otomatis dari video'}
+    ],blank:{title:'Karya baru',cat:'video',url:'',duration:'',thumb:''}}]},
+  {id:'reels',name:'Reels & TikTok',desc:'Konten vertikal di carousel. Paling bagus pakai link YouTube Shorts.',blocks:[
+    {t:'list',k:'reels',label:'reels',preview:'port',item:[
+      {k:'title',l:'Judul'},
+      {k:'url',l:'Link video',t:'url',ph:'https://youtube.com/shorts/...'},
+      [{k:'duration',l:'Durasi',ph:'0:30'},{k:'thumb',l:'Thumbnail (opsional)',ph:'Otomatis'}]
+    ],blank:{title:'Reels baru',url:'',duration:'',thumb:''}}]},
+  {id:'showreel',name:'Showreel',desc:'Video besar di bagian paling atas.',blocks:[
+    {t:'box',preview:'showreel',fields:[
+      {k:'showreel.title',l:'Judul'},
+      {k:'showreel.url',l:'Link video',t:'url',ph:'https://youtu.be/...'},
+      [{k:'showreel.duration',l:'Durasi',ph:'1:12'},{k:'showreel.thumb',l:'Thumbnail (opsional)',ph:'Otomatis'}]
+    ]}]},
+  {id:'hero',name:'Hero',desc:'Teks pertama yang dilihat pengunjung.',blocks:[
+    {t:'box',fields:[
+      {k:'hero.status',l:'Status kecil di atas judul',ph:'Terbuka untuk project baru'},
+      [{k:'hero.title1',l:'Judul baris 1'},{k:'hero.title2',l:'Baris 2 (biru)'},{k:'hero.title3',l:'Baris 3 (biru)'}],
+      {k:'hero.lead',l:'Paragraf perkenalan',t:'area'}
+    ]},
+    {t:'list',k:'facts',label:'info',title:'Info singkat di bawah tombol',item:[[{k:'title',l:'Judul'},{k:'sub',l:'Keterangan'}]],blank:{title:'',sub:''},max:4}]},
+  {id:'services',name:'Layanan',desc:'Kartu "Apa yang bisa aku bantu".',blocks:[
+    {t:'list',k:'services',label:'layanan',item:[
+      [{k:'title',l:'Nama layanan'},{k:'shape',l:'Ikon bentuk',t:'select',opts:SHAPE_OPTS}],
+      {k:'desc',l:'Keterangan',t:'area'}
+    ],blank:{title:'Layanan baru',desc:'',shape:'square'},max:8}]},
+  {id:'about',name:'Tentang',desc:'Bio, software, dan cara kerja.',blocks:[
+    {t:'box',fields:[
+      {k:'about.quote',l:'Kalimat utama',t:'area',hint:'Apit kata dengan bintang buat warna biru, contoh: *enak diikuti*'},
+      {k:'about.bio',l:'Bio singkat',t:'area'},
+      {k:'tools',l:'Software yang dipakai',t:'tags',hint:'Pisahkan dengan koma'}
+    ]},
+    {t:'list',k:'steps',label:'langkah',title:'Cara kerja',item:[{k:'title',l:'Langkah'},{k:'desc',l:'Keterangan'}],blank:{title:'',desc:''},max:6}]},
+  {id:'contact',name:'Kontak',desc:'Tombol kontak cuma muncul kalau diisi.',blocks:[
+    {t:'box',fields:[
+      {k:'contact.heading',l:'Judul'},
+      {k:'contact.text',l:'Kalimat pendek'},
+      [{k:'contact.email',l:'Email',ph:'nama@gmail.com'},{k:'contact.whatsapp',l:'Nomor WhatsApp',ph:'0812xxxx'}],
+      [{k:'contact.instagram',l:'Instagram',ph:'@username'},{k:'contact.youtube',l:'Link YouTube',ph:'https://youtube.com/@...'}]
+    ]}]},
+  {id:'security',name:'Keamanan',desc:'Kunci database biar cuma akun kamu yang bisa ngedit.',blocks:[{t:'security'}]}
+];
+
+let D=null,saved=null,cur='works',user=null;
+
+// ===== Render =====
+function fieldHTML(f,base=''){
+  if(Array.isArray(f))return `<div class="row">${f.map(x=>fieldHTML(x,base)).join('')}</div>`;
+  const p=base+f.k,v=getP(D,p),id='f_'+p.replace(/\./g,'_');
+  let input;
+  if(f.t==='area')input=`<textarea id="${id}" data-p="${p}" placeholder="${esc(f.ph||'')}">${esc(v)}</textarea>`;
+  else if(f.t==='select')input=`<select id="${id}" data-p="${p}">${f.opts.map(([a,b])=>`<option value="${a}"${a===v?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
+  else if(f.t==='tags')input=`<input id="${id}" data-p="${p}" data-tags="1" value="${esc((v||[]).join(', '))}">`;
+  else input=`<input id="${id}" data-p="${p}" ${f.t==='url'?'type="url" inputmode="url"':''} placeholder="${esc(f.ph||'')}" value="${esc(v)}">`;
+  const st=f.t==='url'?`<span class="linkok" data-ok="${p}">${linkState(v)}</span>`:'';
+  return `<div class="f"><label for="${id}">${esc(f.l)}</label>${input}${f.hint?`<span class="hint">${esc(f.hint)}</span>`:''}${st}</div>`;
+}
+function linkState(u){
+  if(!u)return '';
+  const m=parseMedia(u);
+  return m.type==='youtube'?'<span class="good">✓ Link YouTube terbaca</span>':m.type==='drive'?'<span class="good">✓ Link Google Drive terbaca (pastikan aksesnya "Siapa saja yang memiliki link")</span>':m.type==='file'?'<span class="good">✓ File video</span>':'<span class="bad">Link belum dikenali. Pakai link YouTube atau Google Drive.</span>';
+}
+function pvHTML(item,kind){
+  const m=parseMedia(item&&item.url);
+  const list=item&&item.thumb?[item.thumb]:m?(kind==='port'?m.thumbsPortrait:m.thumbs):[];
+  const img=list.length?`<img alt="" src="${esc(list[0])}" data-alt="${esc(list.slice(1).join('|'))}" onload="if(this.naturalWidth<=120)this.onerror()" onerror="const a=(this.dataset.alt||'').split('|').filter(Boolean);if(a.length){this.dataset.alt=a.slice(1).join('|');this.src=a[0]}else this.remove()">`:'';
+  return `<div class="pv ${kind}">${item&&item.duration?`<span class="tag">${esc(item.duration)}</span>`:''}${img}${img?'':'Belum ada video'}</div>`;
+}
+function blockHTML(b){
+  if(b.t==='box'){
+    const pv=b.preview==='showreel'?`<div style="display:flex;justify-content:center">${pvHTML(D.showreel,'land').replace('class="pv land"','class="pv land" style="width:min(360px,100%)" data-pv="showreel"')}</div>`:'';
+    return `<div class="box">${pv}${b.fields.map(f=>fieldHTML(f)).join('')}</div>`;
+  }
+  if(b.t==='list'){
+    const arr=getP(D,b.k)||[];
+    const items=arr.map((it,i)=>`
+      <div class="item${b.preview?'':' flat'}">
+        ${b.preview?`<div data-pv="${b.k}.${i}">${pvHTML(it,b.preview)}</div>`:''}
+        <div class="item-body">
+          <div class="item-top"><span class="n">${b.label} ${i+1}</span>
+            <div class="ops">
+              <button data-op="up" data-k="${b.k}" data-i="${i}" ${i?'':'disabled'} aria-label="Naikkan">↑</button>
+              <button data-op="down" data-k="${b.k}" data-i="${i}" ${i<arr.length-1?'':'disabled'} aria-label="Turunkan">↓</button>
+              <button data-op="del" class="del" data-k="${b.k}" data-i="${i}" aria-label="Hapus">✕</button>
+            </div></div>
+          ${b.item.map(f=>fieldHTML(f,`${b.k}.${i}.`)).join('')}
+        </div>
+      </div>`).join('');
+    const canAdd=!b.max||arr.length<b.max;
+    return `<div class="box">${b.title?`<h3>${esc(b.title)}</h3>`:''}<div class="items">${items}${canAdd?`<button class="add" data-op="add" data-k="${b.k}">+ Tambah ${b.label}</button>`:''}</div></div>`;
+  }
+  if(b.t==='security')return securityHTML();
+}
+function rulesText(uid){return `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /site/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.uid == "${uid}";
+    }
+  }
+}`}
+function securityHTML(){
+  return `<div class="box setup">
+    <h3>Pasang aturan keamanan (sekali aja)</h3>
+    <ol>
+      <li>Buka <a href="https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore/rules" target="_blank" rel="noopener">Firebase → Firestore → Rules</a>.</li>
+      <li>Hapus semua isinya, lalu tempel kode di bawah.</li>
+      <li>Klik <b>Publish</b>. Selesai, sekarang cuma akun kamu yang bisa nyimpan.</li>
+    </ol>
+    <div class="code"><button class="btn btn-ghost btn-sm" id="copyRules">Salin</button>${esc(rulesText(user.uid))}</div>
+    <div class="f"><label>ID akun kamu (UID)</label><div class="uid">${esc(user.uid)}</div><span class="hint">Login sebagai ${esc(user.email||'')}</span></div>
+  </div>`;
+}
+function renderSide(){
+  $('#side').innerHTML=SECTIONS.map((s,i)=>{
+    const list=s.blocks.find(b=>b.t==='list'&&!b.title);
+    const c=list?(getP(D,list.k)||[]).length:'';
+    return `${s.id==='security'?'<hr>':''}<button data-sec="${s.id}" aria-current="${s.id===cur}">${s.name}<span class="count">${c}</span></button>`;
+  }).join('');
+}
+function renderEditor(){
+  const s=SECTIONS.find(x=>x.id===cur);
+  $('#editor').innerHTML=`<div class="sec-head"><h2>${s.name}</h2><p>${esc(s.desc)}</p></div>${s.blocks.map(blockHTML).join('')}`;
+  renderSide();
+}
+function dirty(){
+  const d=JSON.stringify(D)!==JSON.stringify(saved);
+  $('#savebar').classList.toggle('show',d);
+  return d;
+}
+
+// ===== Events =====
+$('#side').addEventListener('click',e=>{const b=e.target.closest('[data-sec]');if(!b)return;cur=b.dataset.sec;renderEditor();scrollTo({top:0,behavior:'smooth'})});
+$('#editor').addEventListener('input',e=>{
+  const el=e.target.closest('[data-p]');if(!el)return;
+  const p=el.dataset.p;
+  setP(D,p,el.dataset.tags?el.value.split(',').map(x=>x.trim()).filter(Boolean):el.value);
+  const ok=document.querySelector(`[data-ok="${p}"]`);if(ok)ok.innerHTML=linkState(el.value);
+  // update preview thumbnail
+  const m=p.match(/^(works|reels)\.(\d+)\./);
+  if(m&&/\.(url|thumb|duration)$/.test(p)){const box=document.querySelector(`[data-pv="${m[1]}.${m[2]}"]`);if(box)box.innerHTML=pvHTML(D[m[1]][m[2]],m[1]==='reels'?'port':'land')}
+  if(p.startsWith('showreel.')){const box=document.querySelector('[data-pv="showreel"]');if(box)box.outerHTML=pvHTML(D.showreel,'land').replace('class="pv land"','class="pv land" style="width:min(360px,100%)" data-pv="showreel"')}
+  dirty();
+});
+$('#editor').addEventListener('click',async e=>{
+  if(e.target.id==='copyRules'){try{await navigator.clipboard.writeText(rulesText(user.uid));toast('Kode disalin','ok')}catch{toast('Gagal menyalin, blok teksnya manual ya','bad')}return}
+  const b=e.target.closest('[data-op]');if(!b)return;
+  const k=b.dataset.k,i=+b.dataset.i,arr=getP(D,k)||[];
+  const sec=SECTIONS.find(s=>s.id===cur),blk=sec.blocks.find(x=>x.k===k);
+  if(b.dataset.op==='add'){arr.push(clone(blk.blank));setP(D,k,arr);renderEditor();const items=document.querySelectorAll('.item');const last=[...items].filter(x=>x.querySelector(`[data-p^="${k}."]`)).at(-1);if(last){last.scrollIntoView({behavior:'smooth',block:'center'});last.querySelector('input,textarea')?.focus({preventScroll:true})}}
+  else if(b.dataset.op==='del'){const t=arr[i]?.title||'item ini';if(!await ask(`Hapus "${t}"?`))return;arr.splice(i,1);renderEditor()}
+  else{const j=b.dataset.op==='up'?i-1:i+1;[arr[i],arr[j]]=[arr[j],arr[i]];renderEditor()}
+  dirty();
+});
+$('#undo').onclick=()=>{D=clone(saved);renderEditor();dirty()};
+$('#save').onclick=save;
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(dirty())save()}});
+addEventListener('beforeunload',e=>{if(D&&dirty()){e.preventDefault();e.returnValue=''}});
+$('#logout').onclick=async()=>{if(dirty()&&!await ask('Ada perubahan yang belum disimpan. Tetap keluar?'))return;signOut(auth)};
+
+async function save(){
+  const btn=$('#save');btn.disabled=true;btn.textContent='Menyimpan…';
+  try{
+    await setDoc(REF,clone(D));
+    saved=clone(D);dirty();toast('Tersimpan. Website udah ke-update ✓','ok');
+  }catch(err){
+    console.error(err);
+    if(err.code==='permission-denied'){toast('Belum bisa nyimpan: pasang aturan keamanan dulu di menu Keamanan','bad');cur='security';renderEditor()}
+    else toast('Gagal menyimpan: '+(err.message||err),'bad');
+  }finally{btn.disabled=false;btn.textContent='Simpan'}
+}
+
+let tT;function toast(msg,kind=''){const t=$('#toast');t.textContent=msg;t.className='toast show '+kind;clearTimeout(tT);tT=setTimeout(()=>t.className='toast '+kind,3200)}
+// dialog konfirmasi sendiri (tanpa confirm bawaan)
+function ask(msg){return new Promise(r=>{
+  const w=document.createElement('div');
+  w.style.cssText='position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:rgba(3,4,6,.7);backdrop-filter:blur(6px)';
+  w.innerHTML=`<div class="box" style="width:min(360px,100%);animation:pop .3s var(--ease)"><p style="font-size:15px">${esc(msg)}</p><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" data-a="0">Batal</button><button class="btn btn-main btn-sm" data-a="1">Ya</button></div></div>`;
+  w.onclick=e=>{const a=e.target.closest('[data-a]');if(a||e.target===w){w.remove();r(a?.dataset.a==='1')}};
+  document.body.appendChild(w);w.querySelector('[data-a="1"]').focus();
+})}
+
+// ===== Login =====
+$('#gLogin').onclick=async()=>{
+  $('#loginErr').textContent='';
+  const p=new GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
+  try{await signInWithPopup(auth,p)}
+  catch(err){
+    if(err.code==='auth/popup-blocked'||err.code==='auth/operation-not-supported-in-this-environment')return signInWithRedirect(auth,p);
+    if(err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request')return;
+    $('#loginErr').innerHTML=err.code==='auth/unauthorized-domain'
+      ?`Domain <b>${esc(location.hostname)}</b> belum diizinkan. Buka Firebase → Authentication → Settings → <b>Authorized domains</b> → Add domain → isi <b>${esc(location.hostname)}</b>.`
+      :'Gagal masuk: '+esc(err.message||err.code);
+  }
+};
+onAuthStateChanged(auth,async u=>{
+  user=u;
+  $('#loginView').hidden=!!u;$('#appView').hidden=!u;
+  if(!u){D=null;return}
+  const av=$('#avatar');av.hidden=!u.photoURL;if(u.photoURL)av.src=u.photoURL;
+  try{
+    const snap=await getDoc(REF);
+    D={...clone(DEFAULT_CONTENT),...(snap.exists()?snap.data():{})};
+    saved=snap.exists()?clone(D):{};
+    if(!snap.exists())toast('Database masih kosong. Isi contoh dimuat, klik Simpan setelah diedit.');
+  }catch(err){D=clone(DEFAULT_CONTENT);saved=clone(D);toast('Gagal memuat dari database: '+err.message,'bad')}
+  renderEditor();dirty();
+});
+</script>
+</body>
+</html>
