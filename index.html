@@ -259,6 +259,10 @@ video.player{background:#000}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:none;white-space:nowrap}
 @media (max-width:560px){.head .tabs{width:100%}.tab{padding:8px 13px;font-size:13px}}
+
+/* gambar & video nggak bisa ketarik, biar carousel yang geser */
+.thumb img,.thumb video{-webkit-user-drag:none;user-select:none;pointer-events:none}
+.reel-stage *{-webkit-user-select:none;user-select:none}
 </style>
 </head>
 <body class="wait">
@@ -397,7 +401,7 @@ function thumbHTML(item,portrait,gx,gy,live){
   const m=parseMedia(item.url);
   let list=item.thumb?[item.thumb]:(m?(portrait?m.thumbsPortrait:m.thumbs):[]);
   const word=esc((item.title||'').split(' ').slice(0,portrait?1:2).join(' '));
-  const img=list.length?`<img alt="" loading="lazy" decoding="async" src="${esc(list[0])}" data-alt="${esc(list.slice(1).join('|'))}" onload="thumbOk(this)" onerror="thumbNext(this)">`:'';
+  const img=list.length?`<img alt="" draggable="false" loading="lazy" decoding="async" src="${esc(list[0])}" data-alt="${esc(list.slice(1).join('|'))}" onload="thumbOk(this)" onerror="thumbNext(this)">`:'';
   const src=live&&m&&(portrait?m.previewPortrait:m.preview);
   const vid=src?`<video class="pv" muted loop playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback data-src="${esc(src)}" data-full="${esc(m.embed)}" aria-hidden="true" tabindex="-1"></video>`:'';
   return `<div class="thumb" style="--gx:${gx}%;--gy:${gy}%">${img?'':`<div class="word">${word}</div>`}${img}${vid}</div>`;
@@ -494,7 +498,8 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
-stage.addEventListener('pointerdown',e=>{dragX=e.clientX;moved=0;tgt=0;stage.classList.add('drag')});
+stage.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'){if(e.button!==0)return;e.preventDefault()}dragX=e.clientX;moved=0;tgt=0;stage.classList.add('drag')});
+stage.addEventListener('dragstart',e=>e.preventDefault());
 addEventListener('pointermove',e=>{if(dragX===null)return;const d=e.clientX-dragX;dragX=e.clientX;moved+=Math.abs(d);off-=d});
 function endDrag(e){
   if(dragX===null)return;dragX=null;stage.classList.remove('drag');
