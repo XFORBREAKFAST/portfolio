@@ -50,6 +50,7 @@ window.DEFAULT_CONTENT = {
     { title: "Revisi & kirim", desc: "Dirapikan sesuai masukan, diekspor sesuai platform." }
   ],
   settings: { cloudName: "", uploadPreset: "" },
+  watermark: { on: "off", type: "pattern", text: "dzakyarif.my.id", logo: "", pattern: "", density: "mid", pos: "south_east", opacity: "40", size: "22" },
   contact: {
     heading: "Punya ide video? Yuk kerjain bareng.",
     text: "Ceritain project kamu lewat salah satu kontak di bawah.",
@@ -60,7 +61,36 @@ window.DEFAULT_CONTENT = {
 window.CATS = { video: "Video", info: "Infografis", logo: "Logo & UI" };
 
 // Baca link YouTube / Google Drive / file video jadi thumbnail + embed
-window.parseMedia = function (url) {
+// watermark Cloudinary (teks atau logo), ditempel lewat URL, file asli nggak berubah
+window.WM = null;
+window.wmLayer = function (wm) {
+  wm = wm || window.WM;
+  if (!wm || wm.on !== "on") return "";
+  const o = Math.max(10, Math.min(100, +wm.opacity || 60));
+  const w = Math.max(5, Math.min(60, +wm.size || 22)) / 100;
+  const g = wm.pos || "south_east";
+  const off = g === "center" ? "" : ",x_0.04,y_0.04";
+  let layer;
+  const pid = (u) => { const m = (u || "").match(/\/image\/upload\/(?:[^/]+\/)*?(?:v\d+\/)?([^.]+)\.[a-z0-9]+$/i); return m ? m[1].replace(/\//g, ":") : ""; };
+  if (wm.type === "pattern") {
+    const id = pid(wm.pattern);
+    if (!id) return "";
+    // satu gambar pola transparan, dibentangkan menutup seluruh video
+    return `/l_${id},o_${o}/c_fill,fl_relative,w_1.0,h_1.0/fl_layer_apply,g_center`;
+  }
+  if (wm.type === "logo" && wm.logo) {
+    const m = wm.logo.match(/\/image\/upload\/(?:[^/]+\/)*?(?:v\d+\/)?([^.]+)\.[a-z0-9]+$/i);
+    if (!m) return "";
+    layer = `l_${m[1].replace(/\//g, ":")},o_${o}`;
+  } else {
+    const t = (wm.text || "").trim();
+    if (!t) return "";
+    const enc = encodeURIComponent(t).replace(/%2C/gi, "%252C").replace(/%2F/gi, "%252F");
+    layer = `l_text:Arial_80_bold:${enc},co_white,o_${o}`;
+  }
+  return `/${layer}/c_scale,fl_relative,w_${w}/fl_layer_apply,g_${g}${off}`;
+};
+window.parseMedia = function (url, wm) {
   url = (url || "").trim();
   if (!url) return null;
   let m = url.match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/)([\w-]{11})/);
@@ -80,18 +110,22 @@ window.parseMedia = function (url) {
     return { type: "drive", id, thumbs: t, thumbsPortrait: t, embed: `https://drive.google.com/file/d/${id}/preview` };
   }
   // video upload Cloudinary: bisa dipotong & dikompres lewat URL
-  m = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.+)$/);
+  m = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/(?:upload|private|authenticated)\/)(.+)$/);
   if (m) {
-    const base = m[1], rest = m[2].replace(/^(?:[a-z]{1,3}_[^/]+\/)+/, "");
+    // buang tanda tangan & transformasi lama dari link, sisakan versi + nama file
+    const base = m[1], rest = m[2].replace(/^s--[^/]+--\//, "").replace(/^(?:[a-z]{1,3}_[^/]+\/)+/, "");
     const noExt = rest.replace(/\.[a-z0-9]+$/i, "");
     const t = (tr, ext) => `${base}${tr}/${ext ? noExt + "." + ext : rest}`;
+    const L = window.wmLayer(wm);
     return {
-      type: "file", cloud: true,
+      type: "file", cloud: true, wm: !!L,
+      plain: L ? null : t("q_auto", "mp4"),
       thumbs: [t("so_1,w_1280,q_auto", "jpg")],
       thumbsPortrait: [t("so_1,w_720,q_auto", "jpg")],
-      preview: t("w_960,q_auto:eco,du_12,ac_none", "mp4"),
-      previewPortrait: t("w_400,q_auto:eco,du_8,ac_none", "mp4"),
-      embed: t("q_auto", "mp4")
+      preview: t("w_960,q_auto:eco,du_12,ac_none" + L, "mp4"),
+      previewPortrait: t("w_400,q_auto:eco,du_8,ac_none" + L, "mp4"),
+      embed: t("q_auto" + L, "mp4"),
+      wmFrame: t("so_1,w_960,q_auto" + L, "jpg")
     };
   }
   if (/\.(mp4|webm|mov)(\?|$)/i.test(url)) return { type: "file", thumbs: [], thumbsPortrait: [], preview: url, previewPortrait: url, embed: url };

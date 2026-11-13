@@ -239,7 +239,10 @@ const SECTIONS=[
     ]}]},
   {id:'upload',name:'Upload video',desc:'Biar video bisa di-upload langsung (tanpa logo YouTube). Pakai Cloudinary, gratis.',blocks:[
     {t:'cloudhelp'},
-    {t:'box',fields:[[{k:'settings.cloudName',l:'Cloud name',ph:'contoh: dzakyarif'},{k:'settings.uploadPreset',l:'Upload preset',ph:'contoh: portfolio'}]]}]},
+    {t:'box',fields:[[{k:'settings.cloudName',l:'Cloud name',ph:'contoh: dzakyarif'},{k:'settings.uploadPreset',l:'Upload preset (video)',ph:'contoh: portfolio'}],
+      {k:'settings.imagePreset',l:'Upload preset gambar (buat logo & pola watermark)',ph:'Kosongkan kalau belum pakai proteksi',hint:'Wajib diisi kalau kamu pakai Proteksi anti-download di bawah.'}]},
+    {t:'watermark'},
+    {t:'protect'}]},
   {id:'security',name:'Keamanan',desc:'Kunci database biar cuma akun kamu yang bisa ngedit.',blocks:[{t:'security'}]}
 ];
 
@@ -270,6 +273,14 @@ function pvHTML(item,kind){
   const img=list.length?`<img alt="" src="${esc(list[0])}" data-alt="${esc(list.slice(1).join('|'))}" onload="if(this.naturalWidth<=120)this.onerror()" onerror="const a=(this.dataset.alt||'').split('|').filter(Boolean);if(a.length){this.dataset.alt=a.slice(1).join('|');this.src=a[0]}else this.remove()">`:'';
   return `<div class="pv ${kind}">${item&&item.duration?`<span class="tag">${esc(item.duration)}</span>`:''}${img}${img?'':'Belum ada video'}</div>`;
 }
+function firstCloud(){for(const u of [D.showreel?.url,...(D.reels||[]).map(r=>r.url),...(D.works||[]).map(w=>w.url)]){const m=parseMedia(u);if(m&&m.cloud)return u}return null}
+function wmPreview(){
+  const u=firstCloud();
+  if(!u)return '<span class="hint">Upload minimal 1 video dulu buat lihat contohnya.</span>';
+  const m=parseMedia(u,D.watermark);
+  if(!m.wm)return '<span class="hint">Watermark lagi mati.</span>';
+  return `<img src="${esc(m.wmFrame)}" alt="Contoh watermark" style="max-width:100%;max-height:320px;border-radius:10px;border:1px solid var(--line)" onerror="this.outerHTML='<span class=&quot;hint&quot;>Contoh belum bisa dimuat, coba lagi sebentar.</span>'">`;
+}
 function blockHTML(b){
   if(b.t==='box'){
     const pv=b.preview==='showreel'?`<div style="display:flex;justify-content:center">${pvHTML(D.showreel,'land').replace('class="pv land"','class="pv land" style="width:min(360px,100%)" data-pv="showreel"')}</div>`:'';
@@ -294,6 +305,48 @@ function blockHTML(b){
     return `<div class="box">${b.title?`<h3>${esc(b.title)}</h3>`:''}<div class="items">${items}${canAdd?`<button class="add" data-op="add" data-k="${b.k}">+ Tambah ${b.label}</button>`:''}</div></div>`;
   }
   if(b.t==='security')return securityHTML();
+  if(b.t==='watermark'){
+    const w=D.watermark||(D.watermark={});
+    const sel=(k,opts)=>`<select data-p="watermark.${k}" id="f_wm_${k}">${opts.map(([a,b])=>`<option value="${a}"${String(w[k])===a?' selected':''}>${b}</option>`).join('')}</select>`;
+    const logo=w.type==='logo';
+    return `<div class="box"><h3>Watermark otomatis</h3>
+      <span class="hint">Ditempel otomatis ke semua video yang di-upload (bukan link YouTube). File asli nggak berubah, bisa dimatikan kapan aja.</span>
+      <div class="row">
+        <div class="f"><label for="f_wm_on">Status</label>${sel('on',[['off','Mati'],['on','Nyala']])}</div>
+        <div class="f"><label for="f_wm_type">Jenis</label>${sel('type',[['pattern','Pola berulang (diagonal)'],['text','Teks 1x di pojok'],['logo','Logo 1x di pojok']])}</div>
+      </div>
+      ${w.type==='pattern'?`
+      <div class="row">
+        <div class="f"><label for="f_wm_text">Teks pola</label><input id="f_wm_text" data-p="watermark.text" value="${esc(w.text)}" placeholder="dzakyarif.my.id"></div>
+        <div class="f"><label for="f_wm_density">Kerapatan</label>${sel('density',[['low','Jarang'],['mid','Sedang'],['high','Rapat']])}</div>
+        <div class="f"><label for="f_wm_opacity">Transparansi</label>${sel('opacity',[['20','Tipis'],['40','Sedang'],['70','Tebal']])}</div>
+      </div>
+      <div class="f"><button type="button" class="btn btn-blue" data-mkpat="1" style="justify-self:start">${w.pattern?'↻ Buat ulang pola':'Buat pola'}</button>
+        <div class="prog" data-prog="watermark.pattern" hidden><i></i><span>0%</span></div>
+        <span class="hint">Klik ini setiap habis ganti teks atau kerapatan.</span></div>
+      <div class="f"><label>Contoh hasil</label><div id="wmPrev">${wmPreview()}</div></div>
+    </div>`:''}
+      ${w.type==='pattern'?'':`${logo?`<div class="f"><label>Logo (PNG transparan paling bagus)</label><div class="urlrow"><input data-p="watermark.logo" value="${esc(w.logo)}" placeholder="Upload logo dulu"><button type="button" class="btn btn-blue btn-sm" data-uplogo="1">⬆ Upload logo</button></div><div class="prog" data-prog="watermark.logo" hidden><i></i><span>0%</span></div></div>`
+            :`<div class="f"><label for="f_wm_text">Teks watermark</label><input id="f_wm_text" data-p="watermark.text" value="${esc(w.text)}" placeholder="dzakyarif.my.id"></div>`}
+      <div class="row">
+        <div class="f"><label for="f_wm_pos">Posisi</label>${sel('pos',[['south_east','Kanan bawah'],['south_west','Kiri bawah'],['north_east','Kanan atas'],['north_west','Kiri atas'],['center','Tengah']])}</div>
+        <div class="f"><label for="f_wm_size">Ukuran</label>${sel('size',[['12','Kecil'],['22','Sedang'],['35','Besar']])}</div>
+        <div class="f"><label for="f_wm_opacity">Transparansi</label>${sel('opacity',[['30','Tipis'],['60','Sedang'],['90','Tebal']])}</div>
+      </div>
+      <div class="f"><label>Contoh hasil</label><div id="wmPrev">${wmPreview()}</div></div>
+    </div>`}`;
+  }
+  if(b.t==='protect')return `<div class="box setup"><h3>Proteksi anti-download (disarankan)</h3>
+    <span class="hint">Tanpa ini, orang yang paham bisa ngambil video asli tanpa watermark dari link-nya. Setelah ini, yang bisa diambil cuma versi yang ada watermark-nya.</span>
+    <ol>
+      <li>Cloudinary → <b>Settings ⚙ → Upload → Upload presets</b> → buka preset video kamu → <b>Delivery type: Private</b> → <b>Save</b>.</li>
+      <li>Bikin preset kedua buat gambar: <b>Add upload preset</b> → <b>Unsigned</b>, <b>Delivery type: Upload</b>, folder <code>portfolio</code> → <b>Save</b> → isi namanya di kolom <b>Upload preset gambar</b> di atas.</li>
+      <li><b>Settings ⚙ → Security</b> → <b>Strict transformations: Enabled</b>.</li>
+      <li>Masih di Security → <b>Allowed strict referral domains</b> → tambah <code>${esc(location.hostname)}</code> → <b>Save</b>.</li>
+      <li>Upload ulang video yang udah ada. Video lama masih bisa diambil versi aslinya, jadi hapus video lama di <b>Media Library</b> Cloudinary.</li>
+      <li>Klik <b>↻ Buat ulang pola</b> sekali lagi, lalu <b>Simpan</b>.</li>
+    </ol>
+    <span class="hint">Catatan jujur: nggak ada website yang 100% anti-download, karena screen recording selalu bisa. Tapi dengan watermark pola + proteksi ini, video yang diambil orang tetap ada watermark kamu.</span></div>`;
   if(b.t==='cloudhelp')return `<div class="box setup"><h3>Cara setup (sekali aja)</h3><ol>
     <li>Daftar gratis di <a href="https://cloudinary.com/users/register_free" target="_blank" rel="noopener">cloudinary.com</a> (bisa pakai Google, tanpa kartu kredit).</li>
     <li>Di halaman <b>Dashboard</b>, salin <b>Cloud name</b> → tempel di bawah.</li>
@@ -352,6 +405,7 @@ $('#editor').addEventListener('input',e=>{
   // update preview thumbnail
   const m=p.match(/^(works|reels)\.(\d+)\./);
   if(m&&/\.(url|thumb|duration)$/.test(p)){const box=document.querySelector(`[data-pv="${m[1]}.${m[2]}"]`);if(box)box.innerHTML=pvHTML(D[m[1]][m[2]],m[1]==='reels'?'port':'land')}
+  if(p.startsWith('watermark.')){if(p==='watermark.type'){const k=scrollY;renderEditor();scrollTo(0,k)}else{clearTimeout(window._wmT);window._wmT=setTimeout(()=>{const el=document.getElementById('wmPrev');if(el)el.innerHTML=wmPreview()},500)}}
   if(p.startsWith('showreel.')){const box=document.querySelector('[data-pv="showreel"]');if(box)box.outerHTML=pvHTML(D.showreel,'land').replace('class="pv land"','class="pv land" style="width:min(360px,100%)" data-pv="showreel"')}
   dirty();
 });
@@ -373,13 +427,42 @@ $('#editor').addEventListener('click',e=>{
   const p=b.dataset.up,inp=document.createElement('input');inp.type='file';inp.accept='video/*';
   inp.onchange=()=>{const f=inp.files[0];if(f)upload(f,p,b)};inp.click();
 });
-function upload(file,p,btn){
+$('#editor').addEventListener('click',e=>{
+  const b=e.target.closest('[data-uplogo]');if(!b)return;
+  const cs=D.settings||{};if(!cs.cloudName||!cs.uploadPreset){toast('Isi Cloud name & preset dulu','bad');return}
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/png,image/webp,image/jpeg';
+  inp.onchange=()=>{const f=inp.files[0];if(f)upload(f,'watermark.logo',b,'image')};inp.click();
+});
+// bikin gambar pola watermark (PNG transparan) lalu upload
+function makePattern(text,density){
+  const S=2000,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+  const cfg={low:[64,620,300],mid:[50,440,210],high:[38,320,150]}[density]||[50,440,210];
+  const [fs,gx,gy]=cfg;
+  g.font=`600 ${fs}px Geist, Arial, sans-serif`;g.textAlign='center';g.textBaseline='middle';
+  g.translate(S/2,S/2);g.rotate(-30*Math.PI/180);
+  const R=S*0.9;let row=0;
+  for(let y=-R;y<=R;y+=gy,row++){
+    for(let x=-R+(row%2?gx/2:0);x<=R;x+=gx){
+      g.shadowColor='rgba(0,0,0,.35)';g.shadowBlur=6;g.fillStyle='rgba(255,255,255,1)';g.fillText(text,x,y);
+    }
+  }
+  return new Promise(r=>c.toBlob(r,'image/png'));
+}
+$('#editor').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-mkpat]');if(!b)return;
+  const cs=D.settings||{};if(!cs.cloudName||!cs.uploadPreset){toast('Isi Cloud name & preset dulu','bad');return}
+  const t=(D.watermark.text||'').trim();if(!t){toast('Isi teks pola dulu','bad');return}
+  b.disabled=true;
+  const blob=await makePattern(t,D.watermark.density);
+  upload(new File([blob],'watermark-pattern.png',{type:'image/png'}),'watermark.pattern',b,'image');
+});
+function upload(file,p,btn,kind='video'){
   if(file.size>100*1024*1024){toast('File lebih dari 100 MB. Kompres dulu (export 1080p H.264).','bad');return}
-  const cs=D.settings,fd=new FormData();fd.append('file',file);fd.append('upload_preset',cs.uploadPreset);
+  const cs=D.settings,fd=new FormData();fd.append('file',file);fd.append('upload_preset',kind==='image'&&cs.imagePreset?cs.imagePreset:cs.uploadPreset);
   const bar=document.querySelector(`[data-prog="${p}"]`),fill=bar.querySelector('i'),txt=bar.querySelector('span');
   bar.hidden=false;btn.disabled=true;
   const x=new XMLHttpRequest();
-  x.open('POST',`https://api.cloudinary.com/v1_1/${encodeURIComponent(cs.cloudName)}/video/upload`);
+  x.open('POST',`https://api.cloudinary.com/v1_1/${encodeURIComponent(cs.cloudName)}/${kind}/upload`);
   x.upload.onprogress=ev=>{if(ev.lengthComputable){const pc=Math.round(ev.loaded/ev.total*100);fill.style.width=pc+'%';txt.textContent=pc<100?`Upload ${pc}%`:'Memproses video…'}};
   x.onload=()=>{
     btn.disabled=false;bar.hidden=true;fill.style.width='0';
@@ -389,7 +472,7 @@ function upload(file,p,btn){
     const dp=p.replace(/url$/,'duration');
     if(r.duration&&!getP(D,dp)){const d=Math.round(r.duration);setP(D,dp,Math.floor(d/60)+':'+String(d%60).padStart(2,'0'))}
     const keep=scrollY;renderEditor();scrollTo(0,keep);dirty();
-    toast('Video ke-upload ✓ Jangan lupa klik Simpan','ok');
+    toast((p==='watermark.pattern'?'Pola watermark':kind==='image'?'Logo':'Video')+' ke-upload ✓ Cek contoh hasil, lalu klik Simpan','ok');
   };
   x.onerror=()=>{btn.disabled=false;bar.hidden=true;toast('Upload gagal, cek koneksi internet','bad')};
   x.send(fd);

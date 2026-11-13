@@ -403,7 +403,7 @@ function thumbHTML(item,portrait,gx,gy,live){
   const word=esc((item.title||'').split(' ').slice(0,portrait?1:2).join(' '));
   const img=list.length?`<img alt="" draggable="false" loading="lazy" decoding="async" src="${esc(list[0])}" data-alt="${esc(list.slice(1).join('|'))}" onload="thumbOk(this)" onerror="thumbNext(this)">`:'';
   const src=live&&m&&(portrait?m.previewPortrait:m.preview);
-  const vid=src?`<video class="pv" muted loop playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback data-src="${esc(src)}" data-full="${esc(m.embed)}" aria-hidden="true" tabindex="-1"></video>`:'';
+  const vid=src?`<video class="pv" muted loop playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback data-src="${esc(src)}" data-full="${esc(m.embed)}" data-plain="${esc(m.plain||m.embed)}" aria-hidden="true" tabindex="-1"></video>`:'';
   return `<div class="thumb" style="--gx:${gx}%;--gy:${gy}%">${img?'':`<div class="word">${word}</div>`}${img}${vid}</div>`;
 }
 function thumbNext(img){const a=(img.dataset.alt||'').split('|').filter(Boolean);if(a.length){img.dataset.alt=a.slice(1).join('|');img.src=a[0]}else img.remove()}
@@ -423,7 +423,7 @@ const SHAPES={portrait:'width:24px;height:42px',landscape:'width:68px;height:38p
 const grid=document.getElementById('grid'),stage=document.getElementById('stage'),sr=document.getElementById('showreel');
 let rEls=[],hv=[];
 function render(data){
-  C=data;
+  C=data;window.WM=C.watermark||null;
   document.querySelectorAll('[data-k]').forEach(el=>{el.textContent=get(C,el.dataset.k)||''});
   document.getElementById('facts').innerHTML=(C.facts||[]).map(f=>`<div><strong>${esc(f.title)}</strong><span>${esc(f.sub)}</span></div>`).join('');
   document.getElementById('srThumb').outerHTML=thumbHTML(C.showreel||{},false,75,25,true).replace('class="thumb"','class="thumb" id="srThumb"');
@@ -539,7 +539,7 @@ function open(item,ratio,meta,src){
   clearTimeout(loadT);
   if(m)loadT=setTimeout(()=>{
     if(!modal.classList.contains('open'))return;
-    const el=m.type==='file'?(()=>{const v=Object.assign(document.createElement('video'),{src:m.embed,controls:true,autoplay:true,playsInline:true,disablePictureInPicture:true,disableRemotePlayback:true,poster:(ratio==='9:16'?m.thumbsPortrait:m.thumbs)[0]||''});v.setAttribute('controlslist','nodownload noremoteplayback');v.addEventListener('contextmenu',e=>e.preventDefault());return v})():Object.assign(document.createElement('iframe'),{src:m.embed,allow:'autoplay; encrypted-media; picture-in-picture; fullscreen',allowFullscreen:true,title:item.title||'Video'});
+    const el=m.type==='file'?(()=>{const v=Object.assign(document.createElement('video'),{src:m.embed,controls:true,autoplay:true,playsInline:true,disablePictureInPicture:true,disableRemotePlayback:true,poster:(ratio==='9:16'?m.thumbsPortrait:m.thumbs)[0]||''});v.setAttribute('controlslist','nodownload noremoteplayback');if(m.plain&&m.plain!==m.embed)v.addEventListener('error',()=>{if(v.src!==m.plain)v.src=m.plain},{once:true});v.addEventListener('contextmenu',e=>e.preventDefault());return v})():Object.assign(document.createElement('iframe'),{src:m.embed,allow:'autoplay; encrypted-media; picture-in-picture; fullscreen',allowFullscreen:true,title:item.title||'Video'});
     el.className='player';mm.appendChild(el);
     el.addEventListener('load',()=>el.classList.add('ready'));if(m.type==='file')el.addEventListener('loadeddata',()=>el.classList.add('ready'));
   },delay);
@@ -618,7 +618,7 @@ function setupPreviews(){
         v.muted=true;v.defaultMuted=true;v.playsInline=true;
         v.addEventListener('playing',()=>v.classList.add('playing'),{once:true});
         // kalau versi ringan belum siap di Cloudinary, pakai video aslinya
-        v.addEventListener('error',()=>{if(v.dataset.full&&v.src!==v.dataset.full){v.src=v.dataset.full;v.play().catch(()=>{})}});
+        v.addEventListener('error',()=>{const nx=[v.dataset.full,v.dataset.plain].find(u=>u&&u!==v.src&&!v.dataset.tried?.includes(u));if(nx){v.dataset.tried=(v.dataset.tried||'')+'|'+nx;v.src=nx;v.play().catch(()=>{})}});
         v.src=v.dataset.src;
       }
       v.muted=true;v.play().catch(()=>{});
